@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cliente REST · Productos</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --txt:#1d2433; --muted:#6b7280; --pri:#2563eb; --ok:#16a34a; --err:#dc2626; --borde:#e5e7eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--txt); }
+  header { background:#111827; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  header h1 { margin:0; font-size:20px; }
+  header a { color:#93c5fd; margin-left:16px; text-decoration:none; font-size:14px; }
+  main { max-width:1200px; margin:24px auto; padding:0 16px; display:grid; grid-template-columns:340px 1fr; gap:20px; }
+  @media (max-width:900px){ main { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--borde); border-radius:10px; padding:18px; }
+  h2 { font-size:16px; margin:0 0 12px; }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input, select, textarea { width:100%; padding:8px 10px; border:1px solid var(--borde); border-radius:6px; font:inherit; }
+  textarea { resize:vertical; min-height:60px; }
+  .fila { display:flex; gap:8px; }
+  .fila > * { flex:1; }
+  button { cursor:pointer; border:0; border-radius:6px; padding:8px 14px; font:inherit; font-weight:600; }
+  .pri { background:var(--pri); color:#fff; } .sec { background:#e5e7eb; } .del { background:#fee2e2; color:var(--err); }
+  .acciones { display:flex; gap:8px; margin-top:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--borde); }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .chip { font-size:12px; padding:2px 8px; border-radius:99px; background:#eef2ff; color:#3730a3; }
+  .inactivo { opacity:.5; }
+  .filtros { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .filtros input { flex:2; min-width:160px; } .filtros select { flex:1; min-width:120px; }
+  pre { background:#0f172a; color:#e2e8f0; padding:12px; border-radius:8px; font-size:12px; overflow:auto; max-height:280px; margin:0; }
+  .estado { font-size:13px; font-weight:600; margin-bottom:6px; }
+  .estado.ok { color:var(--ok); } .estado.err { color:var(--err); }
+  .tabla-wrap { overflow-x:auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cliente REST · API de Productos</h1>
+  <nav><a href="/api/productos/" target="_blank">API navegable</a><a href="/admin/" target="_blank">Admin</a></nav>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2 id="titulo-form">Nuevo producto (POST)</h2>
+      <form id="form">
+        <input type="hidden" id="id">
+        <label for="nombre">Nombre *</label>
+        <input id="nombre" required maxlength="100">
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion"></textarea>
+        <div class="fila">
+          <div><label for="precio">Precio *</label><input id="precio" type="number" min="1" required></div>
+          <div><label for="stock">Stock</label><input id="stock" type="number" min="0" value="0"></div>
+        </div>
+        <label for="categoria">Categoría</label>
+        <select id="categoria">
+          {% for valor, texto in categorias %}<option value="{{ valor }}">{{ texto }}</option>{% endfor %}
+        </select>
+        <label><input type="checkbox" id="activo" checked style="width:auto"> Activo</label>
+        <div class="acciones">
+          <button type="submit" class="pri" id="btn-guardar">Guardar</button>
+          <button type="button" class="sec" id="btn-cancelar">Limpiar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h2>Última respuesta JSON</h2>
+      <div id="estado" class="estado">—</div>
+      <pre id="respuesta">Aquí se muestra el JSON que devuelve la API.</pre>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Productos (GET)</h2>
+    <div class="filtros">
+      <input id="buscar" placeholder="Buscar por nombre o descripción…">
+      <select id="f-categoria"><option value="">Todas las categorías</option>
+        {% for valor, texto in categorias %}<option value="{{ valor }}">{{ texto }}</option>{% endfor %}
+      </select>
+      <button class="sec" id="btn-buscar">Filtrar</button>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th></th></tr></thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = "/api/productos/";
+const $ = (id) => document.getElementById(id);
+const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
+
+function mostrar(metodo, url, status, json) {
+  const ok = json && json.ok;
+  $("estado").className = "estado " + (ok ? "ok" : "err");
+  $("estado").textContent = `${metodo} ${url} → ${status}`;
+  $("respuesta").textContent = JSON.stringify(json, null, 2);
+}
+
+async function llamar(metodo, url, cuerpo) {
+  const opciones = { method: metodo, headers: { "Accept": "application/json" } };
+  if (cuerpo !== undefined) {
+    opciones.headers["Content-Type"] = "application/json";
+    opciones.body = JSON.stringify(cuerpo);
+  }
+  const res = await fetch(url, opciones);
+  const json = await res.json();
+  mostrar(metodo, url, res.status, json);
+  return json;
+}
+
+async function listar() {
+  const p = new URLSearchParams();
+  if ($("buscar").value) p.set("buscar", $("buscar").value);
+  if ($("f-categoria").value) p.set("categoria", $("f-categoria").value);
+  const url = API + (p.toString() ? "?" + p : "");
+  const json = await llamar("GET", url);
+  const tbody = $("tabla");
+  tbody.innerHTML = "";
+  (json.data || []).forEach((prod) => {
+    const tr = document.createElement("tr");
+    if (!prod.activo) tr.className = "inactivo";
+    tr.innerHTML = `
+      <td>${prod.id}</td>
+      <td></td>
+      <td><span class="chip">${prod.categoria_nombre}</span></td>
+      <td class="num">${clp.format(prod.precio)}</td>
+      <td class="num">${prod.stock}</td>
+      <td style="white-space:nowrap">
+        <button class="sec" data-ver="${prod.id}">Ver</button>
+        <button class="sec" data-editar="${prod.id}">Editar</button>
+        <button class="del" data-borrar="${prod.id}">Borrar</button>
+      </td>`;
+    tr.children[1].textContent = prod.nombre; // evita inyección de HTML
+    tbody.appendChild(tr);
+  });
+}
+
+function limpiar() {
+  $("form").reset();
+  $("id").value = "";
+  $("titulo-form").textContent = "Nuevo producto (POST)";
+}
+
+async function cargarEnFormulario(id) {
+  const json = await llamar("GET", API + id);
+  if (!json.ok) return;
+  const p = json.data;
+  $("id").value = p.id;
+  $("nombre").value = p.nombre;
+  $("descripcion").value = p.descripcion;
+  $("precio").value = p.precio;
+  $("stock").value = p.stock;
+  $("categoria").value = p.categoria;
+  $("activo").checked = p.activo;
+  $("titulo-form").textContent = `Editar producto #${p.id} (PUT)`;
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const datos = {
+    nombre: $("nombre").value,
+    descripcion: $("descripcion").value,
+    precio: Number($("precio").value),
+    stock: Number($("stock").value || 0),
+    categoria: $("categoria").value,
+    activo: $("activo").checked,
+  };
+  const id = $("id").value;
+  const json = id
+    ? await llamar("PUT", API + id, datos)
+    : await llamar("POST", API, datos);
+  if (json.ok) { limpiar(); listar().then(() => mostrar(id ? "PUT" : "POST", id ? API + id : API, json.status, json)); }
+});
+
+$("tabla").addEventListener("click", async (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.ver) llamar("GET", API + b.dataset.ver);
+  if (b.dataset.editar) cargarEnFormulario(b.dataset.editar);
+  if (b.dataset.borrar) {
+    const json = await llamar("DELETE", API + b.dataset.borrar);
+    if (json.ok) listar().then(() => mostrar("DELETE", API + b.dataset.borrar, json.status, json));
+  }
+});
+
+$("btn-cancelar").addEventListener("click", limpiar);
+$("btn-buscar").addEventListener("click", listar);
+$("buscar").addEventListener("keydown", (e) => { if (e.key === "Enter") listar(); });
+listar();
+</script>
+</body>
+</html>

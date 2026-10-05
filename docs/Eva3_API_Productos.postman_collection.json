@@ -170,6 +170,41 @@
           }
         },
         {
+          "name": "Crear producto nuevo (Teclado Kumara)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/productos/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Teclado mecánico Redragon Kumara\",\n  \"descripcion\": \"Switches Outemu Blue, retroiluminado RGB, español\",\n  \"precio\": 34990,\n  \"stock\": 15,\n  \"categoria\": \"ELECTRONICA\",\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Crear con nombre repetido (error 400)",
           "request": {
             "method": "POST",

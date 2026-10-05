@@ -30,7 +30,8 @@ proyecto_eva3/
 
 ## Instalación (Windows, laboratorio)
 
-> Requisitos: Python 3.10+ y MySQL Server corriendo (XAMPP, MySQL Installer o Docker).
+> Requisitos: Python 3.10+ y MySQL corriendo. Recomendado: **XAMPP** → en el XAMPP Control Panel presionar **Start** en MySQL.
+> El proyecto usa Django 4.2 porque es compatible con la MariaDB 10.4 que trae XAMPP.
 
 ```bat
 :: 1. Entrar a la carpeta y crear entorno virtual
@@ -144,5 +145,5 @@ set USE_SQLITE=1 && python manage.py test productos   :: sin MySQL
 | `Unknown database 'tienda_api'` | Ejecutar `docs/crear_base_datos.sql` |
 | `Can't connect to MySQL server` | Iniciar MySQL (XAMPP → Start MySQL / servicio MySQL80) o revisar el puerto |
 | `cryptography package is required` | `pip install cryptography` (ya está en requirements) |
-| `MariaDB 10.5 or later is required` (XAMPP antiguo) | `pip install "Django>=4.2,<5.0"` — Django 4.2 soporta MariaDB 10.4 y el código funciona igual |
+| `MariaDB 10.5 or later is required` | Tienes un Django más nuevo instalado: `pip install -r requirements.txt` (instala Django 4.2) |
 | `No module named 'pymysql'` | Activar el venv y `pip install -r requirements.txt` |

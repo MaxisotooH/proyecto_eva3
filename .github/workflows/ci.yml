@@ -1,4 +1,4 @@
-name: CI - Django + MySQL
+name: CI - Django + MariaDB (XAMPP)
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:8.0
+        image: mariadb:10.4   # misma base de datos que trae XAMPP
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: tienda_api

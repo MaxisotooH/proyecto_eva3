@@ -55,6 +55,11 @@ class ProductoAPITest(APITestCase):
         self.assertEqual(r.status_code, 400)
         self.assertIn("precio", r.json()["errores"])
 
+    def test_crear_precio_fuera_de_rango(self):
+        r = self.client.post(URL, {"nombre": "Caro", "precio": 99999999999}, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("precio", r.json()["errores"])
+
     # ---------------- PUT ----------------
     def test_put_con_id_en_json(self):
         r = self.client.put(URL, {"id": self.p1.id, "precio": 17000}, format="json")
@@ -66,6 +71,12 @@ class ProductoAPITest(APITestCase):
         r = self.client.put(URL, {"id": 9999, "precio": 1}, format="json")
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.json()["codigo"], "PRODUCTO_NO_ENCONTRADO")
+
+    def test_put_id_booleano_o_decimal_falla(self):
+        for valor in (True, 1.5, "abc"):
+            r = self.client.put(URL, {"id": valor, "precio": 1}, format="json")
+            self.assertEqual(r.status_code, 400, valor)
+            self.assertEqual(r.json()["codigo"], "ID_INVALIDO")
 
     def test_put_sin_id(self):
         r = self.client.put(URL, {"precio": 1}, format="json")
@@ -81,6 +92,12 @@ class ProductoAPITest(APITestCase):
     def test_put_nombre_de_otro_producto_falla(self):
         r = self.client.put(URL, {"id": self.p1.id, "nombre": "Silla"}, format="json")
         self.assertEqual(r.status_code, 400)
+
+    # ---------------- Rutas ----------------
+    def test_ruta_api_inexistente_devuelve_json(self):
+        r = self.client.get("/api/no-existe/")
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.json()["codigo"], "RUTA_NO_ENCONTRADA")
 
     # ---------------- DELETE ----------------
     def test_eliminar(self):

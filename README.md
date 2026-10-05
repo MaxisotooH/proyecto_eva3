@@ -20,7 +20,7 @@ proyecto_eva3/
 │   ├── urls.py             # Router de DRF (ViewSet)
 │   ├── exceptions.py       # todos los errores salen en JSON con el mismo formato
 │   ├── admin.py            # administración del modelo
-│   ├── tests.py            # 15 pruebas automáticas del CRUD
+│   ├── tests.py            # 18 pruebas automáticas del CRUD
 │   ├── fixtures/productos.json   # datos de ejemplo
 │   └── templates/productos/cliente.html  # cliente REST web propio
 └── docs/
@@ -134,7 +134,7 @@ set USE_SQLITE=1 && python manage.py test productos   :: sin MySQL
 2. `productos/urls.py`: `router.register("productos", ProductoViewSet)`; `config/urls.py` incluye `api/`.
 3. `/admin/`: listar, buscar, filtrar, editar precio/stock en la lista, crear y borrar productos.
 4. Aporte extra: cliente REST web en `/`, filtros de búsqueda, errores JSON uniformes,
-   barra final opcional, pruebas automáticas.
+   barra final opcional, rutas /api/ inexistentes en JSON, pruebas automáticas.
 
 ## Problemas comunes
 

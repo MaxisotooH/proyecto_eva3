@@ -146,8 +146,12 @@ class ProductoViewSet(viewsets.ModelViewSet):
                 {"id": ["Este campo es obligatorio."]},
                 codigo="ID_REQUERIDO",
             )
+        valor = datos.get("id")
         try:
-            producto_id = int(datos.get("id"))
+            # true/false o 1.5 no son ids válidos (int(True) daría 1)
+            if isinstance(valor, bool) or (isinstance(valor, float) and not valor.is_integer()):
+                raise ValueError
+            producto_id = int(valor)
         except (TypeError, ValueError):
             return None, respuesta_error(
                 'El campo "id" debe ser un número entero.',

@@ -112,9 +112,15 @@ async function llamar(metodo, url, cuerpo) {
     opciones.headers["Content-Type"] = "application/json";
     opciones.body = JSON.stringify(cuerpo);
   }
-  const res = await fetch(url, opciones);
-  const json = await res.json();
-  mostrar(metodo, url, res.status, json);
+  let res, json;
+  try {
+    res = await fetch(url, opciones);
+    json = await res.json();
+  } catch (err) {
+    // Servidor caído o respuesta que no es JSON
+    json = { ok: false, mensaje: "No se pudo leer la respuesta: " + err.message };
+  }
+  mostrar(metodo, url, res ? res.status : "sin conexión", json);
   return json;
 }
 
@@ -188,6 +194,7 @@ $("tabla").addEventListener("click", async (e) => {
   if (b.dataset.ver) llamar("GET", API + b.dataset.ver);
   if (b.dataset.editar) cargarEnFormulario(b.dataset.editar);
   if (b.dataset.borrar) {
+    if (!confirm(`¿Eliminar el producto #${b.dataset.borrar}?`)) return;
     const json = await llamar("DELETE", API + b.dataset.borrar);
     if (json.ok) listar().then(() => mostrar("DELETE", API + b.dataset.borrar, json.status, json));
   }

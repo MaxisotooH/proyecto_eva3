@@ -2,6 +2,10 @@ from rest_framework import serializers
 
 from .models import Producto
 
+# Máximo de un INTEGER con signo: el mismo límite en MySQL y SQLite,
+# así un número gigante da 400 en vez de un error de la base de datos.
+MAXIMO_ENTERO = 2_147_483_647
+
 
 class ProductoSerializer(serializers.ModelSerializer):
     """Convierte Producto <-> JSON y valida los datos recibidos."""
@@ -27,7 +31,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             # Quitamos el validador automático de "unique" para usar el nuestro
             # (sin distinguir mayúsculas/minúsculas y con mensaje propio).
             "nombre": {"validators": []},
-            "precio": {"min_value": 1},
+            "precio": {"min_value": 1, "max_value": MAXIMO_ENTERO},
+            "stock": {"min_value": 0, "max_value": MAXIMO_ENTERO},
         }
 
     def validate_nombre(self, valor):

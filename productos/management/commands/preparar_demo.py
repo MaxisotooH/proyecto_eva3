@@ -6,6 +6,10 @@ Deja la base lista para la demostración (se puede repetir las veces que se quie
 
 Uso:  python manage.py preparar_demo
       python manage.py preparar_demo --usuario profe --clave otraclave
+
+Un "comando de gestión" es un script propio que se ejecuta con manage.py.
+Django lo encuentra porque está en <app>/management/commands/<nombre>.py
+y define una clase llamada Command.
 """
 import os
 
@@ -21,12 +25,17 @@ class Command(BaseCommand):
     help = "Reinicia los productos de ejemplo y crea el usuario admin para la demo."
 
     def add_arguments(self, parser):
+        """Parámetros opcionales del comando (--usuario y --clave)."""
         parser.add_argument("--usuario", default=os.environ.get("DEMO_ADMIN_USER", "admin"))
         parser.add_argument("--clave", default=os.environ.get("DEMO_ADMIN_PASSWORD", "admin123"))
 
     def handle(self, *args, **opciones):
+        """Código que se ejecuta al llamar al comando."""
+        # transaction.atomic(): borrar y cargar ocurre "todo o nada". Si la
+        # carga falla, se deshace el borrado y no se pierden los datos.
         with transaction.atomic():
             borrados, _ = Producto.objects.all().delete()
+            # loaddata carga productos/fixtures/productos.json (8 productos).
             call_command("loaddata", "productos", verbosity=0)
         self._reiniciar_contador_ids()
         total = Producto.objects.count()
@@ -34,6 +43,7 @@ class Command(BaseCommand):
             f"Productos reiniciados: {borrados} borrados, {total} cargados del fixture."
         ))
 
+        # Superusuario para entrar al admin (/admin/). Si ya existe no se toca.
         User = get_user_model()
         usuario, clave = opciones["usuario"], opciones["clave"]
         if User.objects.filter(username=usuario).exists():
@@ -45,6 +55,12 @@ class Command(BaseCommand):
             ))
 
     def _reiniciar_contador_ids(self):
+        """
+        Ajusta el AUTO_INCREMENT para que el próximo id sea (id más alto + 1).
+
+        Sin esto, después de borrar y recargar, MySQL seguiría contando desde
+        el último id que usó (por ejemplo 15) y el producto nuevo no sería el 9.
+        """
         siguiente = (Producto.objects.order_by("-id").values_list("id", flat=True).first() or 0) + 1
         tabla = Producto._meta.db_table
         with connection.cursor() as cursor:

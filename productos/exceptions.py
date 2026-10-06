@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__)
 
 CODIGOS = {
     400: "DATOS_INVALIDOS",
-    401: "NO_AUTENTICADO",
-    403: "PROHIBIDO",
     404: "NO_ENCONTRADO",
     405: "METODO_NO_PERMITIDO",
     409: "CONFLICTO",

@@ -135,41 +135,6 @@
       "name": "POST",
       "item": [
         {
-          "name": "Crear producto",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/productos/",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "productos"
-              ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Teclado mecánico Redragon\",\n  \"descripcion\": \"Switch blue, retroiluminado\",\n  \"precio\": 34990,\n  \"stock\": 10,\n  \"categoria\": \"ELECTRONICA\",\n  \"activo\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
           "name": "Crear producto nuevo (Teclado Kumara)",
           "request": {
             "method": "POST",

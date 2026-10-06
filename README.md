@@ -28,7 +28,6 @@ proyecto_eva3/
 │   └── templates/productos/cliente.html  # cliente REST web propio
 └── docs/
     ├── crear_base_datos.sql
-    ├── producto_nuevo.json # body de ejemplo para el POST de la demo
     └── Eva3_API_Productos.postman_collection.json
 ```
 

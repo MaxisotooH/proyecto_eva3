@@ -15,7 +15,7 @@ y de error) son **JSON**.
 7. [Endpoints de la API](#7-endpoints-de-la-api)
 8. [Cómo probar el proyecto](#8-cómo-probar-el-proyecto)
 9. [Cómo funciona el código](#9-cómo-funciona-el-código)
-10. [Guion para la demostración](#10-guion-para-la-demostración)
+10. [Guía de revisión y evidencias](#10-guía-de-revisión-y-evidencias)
 11. [Mejoras aplicadas tras la auditoría](#11-mejoras-aplicadas-tras-la-auditoría)
 12. [Problemas comunes](#12-problemas-comunes)
 13. [Notas de seguridad](#13-notas-de-seguridad)
@@ -23,6 +23,9 @@ y de error) son **JSON**.
 ---
 
 ## 1. Cumplimiento de la rúbrica
+
+> Enlaces directos a cada línea de código y capturas de la API funcionando con MySQL:
+> [sección 10, Guía de revisión y evidencias](#10-guía-de-revisión-y-evidencias).
 
 | Criterio (20 pts c/u) | Dónde se cumple |
 |---|---|
@@ -43,8 +46,7 @@ Requisitos puntuales del enunciado:
 | Vistas para consumir los servicios mediante cliente REST | Cliente web en `http://127.0.0.1:8000/`, vista navegable de DRF y colección de Postman |
 
 > **Ojo con la ruta:** el enunciado escribe `Productos/`, pero en este proyecto la API vive
-> bajo el prefijo **`/api/`**: `http://127.0.0.1:8000/api/productos/`. Conviene decirlo al
-> comenzar la demostración.
+> bajo el prefijo **`/api/`**: `http://127.0.0.1:8000/api/productos/`.
 
 ---
 
@@ -544,35 +546,86 @@ excepción y `productos/exceptions.py` la convierte en el JSON de error estánda
 
 ---
 
-## 10. Guion para la demostración
+## 10. Guía de revisión y evidencias
 
-**Antes de empezar:** MySQL encendido → `iniciar_demo.bat` (o `reiniciar_datos.bat` si el
-servidor ya estaba abierto) → Postman con la colección importada → Workbench o phpMyAdmin
-conectado a MySQL.
+Esta sección reúne, para cada criterio de la rúbrica, **dónde mirar en el código** (los
+enlaces abren la línea exacta en GitHub) y **las evidencias de que el proyecto funciona con
+MySQL**: pruebas automáticas en GitHub Actions y capturas de pantalla.
 
-**Criterio 1 — Implementa DRF (settings, MySQL, librerías)**
-1. `requirements.txt`: Django, djangorestframework, PyMySQL (versiones fijadas).
-2. `config/settings.py`: `rest_framework` y `productos` en `INSTALLED_APPS`; `DATABASES`
-   con `django.db.backends.mysql`; bloque `REST_FRAMEWORK`.
-3. `config/__init__.py`: `pymysql.install_as_MySQLdb()`.
-4. En MySQL: `SELECT * FROM tienda_api.productos;` → la tabla existe y tiene datos.
+### 10.1 Criterio 1 — Implementa Django REST Framework según requerimiento
 
-**Criterio 2 — CRUD con salidas JSON (Postman)**
-1. GET lista → GET `/productos/4` → GET `/productos/9999` (404 JSON).
-2. POST "Crear producto nuevo (Teclado Kumara)" (201, id 9) → POST con nombre repetido
-   (400 JSON).
-3. PUT `/productos/` con `{"id": 4, ...}` (200) → PUT con id 9999 (404 JSON).
-4. DELETE `/productos/4` (200 JSON) → repetir el SELECT en MySQL para mostrar que cambió.
+| Qué se exige | Dónde está |
+|---|---|
+| Librerías necesarias | [`requirements.txt`](requirements.txt#L8): Django 4.2, djangorestframework, PyMySQL (versiones fijadas) |
+| DRF instalado en la aplicación | [`config/settings.py` L72](config/settings.py#L72): `"rest_framework"`; [L74](config/settings.py#L74): app `"productos"` |
+| Base de datos MySQL | [`config/settings.py` L116](config/settings.py#L116): `DATABASES` con `django.db.backends.mysql` ([L118](config/settings.py#L118)), `utf8mb4` y modo estricto |
+| Conector MySQL | [`config/__init__.py` L19](config/__init__.py#L19): `pymysql.install_as_MySQLdb()` |
+| Configuración de DRF | [`config/settings.py` L172](config/settings.py#L172): bloque `REST_FRAMEWORK` (renderers JSON, manejador de errores, paginación) |
+| Tabla en MySQL | [`productos/models.py` L12](productos/models.py#L12): modelo `Producto` → tabla `productos` ([L53](productos/models.py#L53)); creación de la base: [`crear_base_datos.py`](productos/management/commands/crear_base_datos.py) |
 
-**Criterio 3 — Vistas, rutas, admin y ViewSet**
-1. `productos/views.py`: `ProductoViewSet(viewsets.ModelViewSet)`.
-2. `productos/urls.py`: `router.register("productos", ProductoViewSet)`; `config/urls.py`
-   incluye `api/`.
-3. `/admin/`: listar, buscar, filtrar, editar precio/stock en la lista, crear y borrar.
-4. Vista navegable `/api/productos/` (como la Figura 2): POST, botón OPTIONS, paginación
-   con `?por_pagina=3`; `/api/productos/4/` con PUT relleno y DELETE.
-5. Aportes extra: cliente REST web en `/`, filtros y paginación, errores JSON uniformes,
-   pruebas automáticas y CI con MariaDB.
+### 10.2 Criterio 2 — Salidas JSON y CRUD desde MySQL
+
+| Requisito del enunciado | Dónde está |
+|---|---|
+| `GET Productos/` → todos | [`views.py` L134](productos/views.py#L134): `list()` |
+| `GET Productos/4` → solo ese producto | [`views.py` L164](productos/views.py#L164): `retrieve()`; 404 JSON si no existe: [L307](productos/views.py#L307) |
+| `POST Productos/` validando que el nombre no exista | [`views.py` L174](productos/views.py#L174): `create()`; validación: [`serializers.py` L55](productos/serializers.py#L55) `validate_nombre()` |
+| `PUT Productos/` según el JSON; si el id no existe, error JSON | [`views.py` L201](productos/views.py#L201): `actualizar_por_json()`; búsqueda del id y error 404 `PRODUCTO_NO_ENCONTRADO`: [L265](productos/views.py#L265) |
+| `DELETE Productos/4` | [`views.py` L229](productos/views.py#L229): `destroy()` (y [L233](productos/views.py#L233) con el id en el JSON) |
+| JSON en éxito y en fracaso | Éxito: [`views.py` L39](productos/views.py#L39) `respuesta_ok()`; error: [`exceptions.py` L68](productos/exceptions.py#L68) `manejador_excepciones_json()` |
+
+### 10.3 Criterio 3 — Vistas, rutas y admin con ViewSet
+
+| Qué se exige | Dónde está |
+|---|---|
+| ViewSet | [`views.py` L82](productos/views.py#L82): `ProductoViewSet(viewsets.ModelViewSet)` |
+| Rutas | [`productos/urls.py` L72](productos/urls.py#L72): `router.register("productos", ProductoViewSet)`; [`config/urls.py` L22](config/urls.py#L22): prefijo `api/` |
+| Admin | [`productos/admin.py` L19](productos/admin.py#L19): `@admin.register(Producto)` con listado, filtros, búsqueda, edición en lista y acciones |
+| Vistas para consumir los servicios mediante cliente REST | Cliente web: [`views.py` L334](productos/views.py#L334) y [`cliente.html`](productos/templates/productos/cliente.html); vista navegable de DRF; [colección de Postman](docs/Eva3_API_Productos.postman_collection.json) (19 peticiones) |
+| Aporte de ideas | Errores JSON uniformes, filtros y paginación, OPTIONS, cliente web propio, 36 pruebas automáticas, CI con MariaDB, comandos `crear_base_datos` y `preparar_demo`, código comentado y esta documentación |
+
+### 10.4 Evidencia 1: pruebas automáticas contra MariaDB (GitHub Actions)
+
+En cada `push`, GitHub ejecuta [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en
+un servidor limpio con **MariaDB 10.4** (la base de datos de XAMPP):
+
+1. Instala las librerías de `requirements.txt` y revisa el proyecto (`check`, migraciones).
+2. Crea la base de datos (`crear_base_datos`), crea las tablas (`migrate`) y carga los
+   productos de ejemplo (`preparar_demo`).
+3. Ejecuta las **36 pruebas automáticas** contra MariaDB (CRUD completo, nombre repetido,
+   ids inexistentes, errores JSON, OPTIONS, paginación...).
+4. Levanta el servidor real y le hace peticiones GET, POST, PUT, DELETE y OPTIONS con `curl`.
+
+El resultado se ve en la pestaña **Actions** del repositorio y en el indicador verde del
+README.
+
+### 10.5 Evidencia 2: capturas de pantalla (servidor local con MySQL 8)
+
+**Vista navegable de DRF — lista** (`GET /api/productos/`, como la Figura 2 del enunciado):
+
+![Lista de productos en la vista navegable de DRF](docs/capturas/01_api_lista.png)
+
+**Vista navegable de DRF — detalle** (`GET /api/productos/4/`, con el formulario PUT relleno
+y el botón DELETE):
+
+![Detalle del producto 4 con formulario PUT](docs/capturas/02_api_detalle.png)
+
+**Error en JSON** (`GET /api/productos/9999`, producto inexistente → 404):
+
+![Respuesta 404 en JSON](docs/capturas/03_error_404.png)
+
+**Cliente REST web** (`http://127.0.0.1:8000/`, consume la API con `fetch`):
+
+![Cliente REST web](docs/capturas/04_cliente_rest.png)
+
+**Panel de administración** (`/admin/` → Productos):
+
+![Admin de Django con el listado de productos](docs/capturas/05_admin.png)
+
+**Datos guardados en MySQL** (consola de MySQL 8.0, `SELECT * FROM tienda_api.productos;`):
+los mismos 8 productos que entrega la API.
+
+![Tabla productos consultada en la consola de MySQL](docs/capturas/06_mysql.png)
 
 ---
 
@@ -594,6 +647,7 @@ conectado a MySQL.
 | 12 | En la lista de la vista navegable se oculta el botón DELETE (sin `id` siempre daba 400) | `productos/renderers.py` |
 | 13 | Router reescrito con un bucle explícito y comentado | `productos/urls.py` |
 | 14 | Comentarios pedagógicos en todo el código; `.gitignore` ampliado; 15 pruebas nuevas (21 → 36); CI prueba también `crear_base_datos`, OPTIONS y paginación; colección Postman con OPTIONS, paginación e id fuera de rango | varios |
+| 15 | Guía de revisión con enlaces a cada línea de código, capturas de la API funcionando con MySQL e indicador de las pruebas de GitHub Actions en el README (el proyecto se revisa en línea) | `DOCUMENTACION.md` §10, `README.md`, `docs/capturas/` |
 
 ---
 
@@ -625,7 +679,7 @@ Configuración pensada para el **laboratorio**. Antes de publicar la API en un s
 
 - `DJANGO_DEBUG=0`, una `DJANGO_SECRET_KEY` larga y secreta, y `DJANGO_ALLOWED_HOSTS` con el
   dominio real.
-- La API está **abierta** (`AllowAny`, sin autenticación) para la demostración con Postman.
+- La API está **abierta** (`AllowAny`, sin autenticación) para poder probarla con Postman sin iniciar sesión.
   En producción habría que exigir autenticación (por ejemplo, `IsAuthenticatedOrReadOnly`
   con tokens).
 - Usar un usuario de MySQL propio del proyecto en vez de `root` (ver

@@ -1,10 +1,19 @@
 # Tienda API — Evaluación 3 Programación Backend (V-FB50-N4-P14-C1)
 
+[![Pruebas con MariaDB 10.4](https://github.com/MaxisotooH/proyecto_eva3/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MaxisotooH/proyecto_eva3/actions/workflows/ci.yml)
+
 API RESTful en **Django + Django REST Framework** con base de datos **MySQL**, que permite
 crear, listar, actualizar y borrar productos. Todas las respuestas (éxito y error) son **JSON**.
 
-📘 **Manual completo (instalación paso a paso en cualquier PC, configuración, pruebas,
-explicación del código y guion de la demo): [DOCUMENTACION.md](DOCUMENTACION.md)**
+![Vista navegable de DRF con la lista de productos](docs/capturas/01_api_lista.png)
+
+- 🧭 **Revisión:** cada criterio de la rúbrica con enlaces a la línea exacta del código, y
+  las capturas de la API funcionando con MySQL →
+  [Guía de revisión y evidencias](DOCUMENTACION.md#10-guía-de-revisión-y-evidencias)
+- 📘 **Manual completo** (instalación paso a paso en cualquier PC, configuración, pruebas y
+  explicación del código) → [DOCUMENTACION.md](DOCUMENTACION.md)
+- ✅ **Pruebas:** el indicador de arriba muestra el resultado de las 36 pruebas automáticas,
+  que GitHub ejecuta contra MariaDB 10.4 en cada cambio.
 
 ## Requisitos
 

@@ -1,3 +1,6 @@
+# Integración continua (CI): GitHub ejecuta este flujo en cada push o pull request.
+# Levanta un servidor MariaDB 10.4 (la misma base de datos que trae XAMPP),
+# instala el proyecto y corre las pruebas contra MySQL real.
 name: CI - Django + MariaDB (XAMPP)
 
 on:
@@ -13,11 +16,11 @@ jobs:
         image: mariadb:10.4   # misma base de datos que trae XAMPP
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: tienda_api
         ports: ["3306:3306"]
         options: >-
           --health-cmd="mysqladmin ping -proot"
           --health-interval=5s --health-timeout=5s --health-retries=20
+    # Datos de conexión que lee config/settings.py
     env:
       DB_NAME: tienda_api
       DB_USER: root
@@ -28,13 +31,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12"   # Django 4.2 funciona con Python 3.10 a 3.12
       - name: Instalar dependencias
         run: pip install -r requirements.txt
       - name: Revisar proyecto
         run: python manage.py check && python manage.py makemigrations --check --dry-run
-      - name: Migrar y cargar datos (MySQL)
-        run: python manage.py migrate --noinput && python manage.py preparar_demo
+      - name: Crear base de datos, migrar y cargar datos (MySQL)
+        run: |
+          python manage.py crear_base_datos
+          python manage.py migrate --noinput
+          python manage.py preparar_demo
       - name: Pruebas automaticas (MySQL)
         run: python manage.py test productos -v 2
       - name: Prueba de humo con el servidor real
@@ -44,6 +50,8 @@ jobs:
           set -x
           curl -sf http://127.0.0.1:8000/api/productos/ -H "Accept: application/json"
           curl -sf http://127.0.0.1:8000/api/productos/4 -H "Accept: application/json"
+          curl -sf "http://127.0.0.1:8000/api/productos/?por_pagina=3&pagina=2" -H "Accept: application/json"
+          curl -sf -X OPTIONS http://127.0.0.1:8000/api/productos/ -H "Accept: application/json"
           curl -s -X POST http://127.0.0.1:8000/api/productos/ -H "Content-Type: application/json" -d '{"nombre":"Producto CI","precio":1000}'
           curl -s -X PUT http://127.0.0.1:8000/api/productos/ -H "Content-Type: application/json" -d '{"id":9999,"precio":1}'
           curl -s -X DELETE http://127.0.0.1:8000/api/productos/4

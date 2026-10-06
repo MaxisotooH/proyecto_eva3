@@ -128,6 +128,69 @@
             },
             "description": ""
           }
+        },
+        {
+          "name": "Listar paginado (2 por página, página 2)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/productos/?por_pagina=2&pagina=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "por_pagina",
+                  "value": "2"
+                },
+                {
+                  "key": "pagina",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Paginación opcional: sin por_pagina se listan todos."
+          }
+        },
+        {
+          "name": "Obtener id fuera de rango (error 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/productos/99999999999999999999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "productos",
+                "99999999999999999999999"
+              ]
+            },
+            "description": ""
+          }
         }
       ]
     },
@@ -518,6 +581,64 @@
                 }
               }
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OPTIONS",
+      "item": [
+        {
+          "name": "Opciones de la lista (describe el POST)",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/productos/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            },
+            "description": "Describe los campos que acepta el POST."
+          }
+        },
+        {
+          "name": "Opciones de un producto (describe el PUT)",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/productos/4/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "productos",
+                "4"
+              ]
+            },
+            "description": ""
           }
         }
       ]

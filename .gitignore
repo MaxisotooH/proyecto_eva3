@@ -1,5 +1,21 @@
+# Entornos virtuales de Python (se crean en cada PC, no se suben)
 venv/
+.venv/
+env/
+
+# Archivos compilados de Python
 __pycache__/
 *.pyc
+
+# Base de datos SQLite de pruebas (USE_SQLITE=1)
 db.sqlite3
+
+# Variables de entorno y claves locales
 .env
+
+# Configuración de editores
+.vscode/
+.idea/
+
+# Registros
+*.log

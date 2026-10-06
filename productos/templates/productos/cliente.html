@@ -1,4 +1,17 @@
 <!doctype html>
+<!--
+  Cliente REST web (http://127.0.0.1:8000/)
+
+  Requisito del enunciado: "Debe crear las vistas para consumir los servicios
+  mediante cliente REST". Esta página NO accede a la base de datos: todo lo
+  hace llamando a la API con fetch() (GET, POST, PUT y DELETE), igual que
+  Postman. La vista que la entrega es cliente_rest() en productos/views.py.
+
+  Las partes encerradas entre llave-porcentaje y entre llaves dobles son del
+  lenguaje de plantillas de Django: se procesan en el servidor antes de enviar
+  la página (aquí, para armar la lista de categorías del select). Por eso no
+  se escriben literalmente en este comentario: Django intentaría ejecutarlas.
+-->
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -95,10 +108,14 @@
 </main>
 
 <script>
+// URL base de la API (ruta relativa: se usa el mismo servidor que entregó la página).
 const API = "/api/productos/";
+// Atajo para buscar un elemento por su id:  $("nombre") == document.getElementById("nombre")
 const $ = (id) => document.getElementById(id);
+// Formato de pesos chilenos: 15990 -> "$15.990"
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
+// Muestra en el panel "Última respuesta JSON" el verbo, la URL, el código HTTP y el JSON.
 function mostrar(metodo, url, status, json) {
   const ok = json && json.ok;
   $("estado").className = "estado " + (ok ? "ok" : "err");
@@ -106,9 +123,15 @@ function mostrar(metodo, url, status, json) {
   $("respuesta").textContent = JSON.stringify(json, null, 2);
 }
 
+// Función central: hace la petición HTTP a la API y devuelve el JSON de respuesta.
+//   metodo: "GET", "POST", "PUT" o "DELETE"
+//   cuerpo: objeto JavaScript que se envía como JSON (solo POST y PUT)
+// "async/await" permite esperar la respuesta del servidor sin congelar la página.
 async function llamar(metodo, url, cuerpo) {
+  // Accept: application/json -> pedimos JSON (y no la vista navegable HTML de DRF).
   const opciones = { method: metodo, headers: { "Accept": "application/json" } };
   if (cuerpo !== undefined) {
+    // Content-Type: avisa al servidor que el cuerpo viene en formato JSON.
     opciones.headers["Content-Type"] = "application/json";
     opciones.body = JSON.stringify(cuerpo);
   }
@@ -124,14 +147,17 @@ async function llamar(metodo, url, cuerpo) {
   return json;
 }
 
+// GET /api/productos/?buscar=...&categoria=...  y dibuja la tabla con los resultados.
 async function listar() {
+  // URLSearchParams arma la parte "?clave=valor&..." de la URL (codificando tildes y espacios).
   const p = new URLSearchParams();
   if ($("buscar").value) p.set("buscar", $("buscar").value);
   if ($("f-categoria").value) p.set("categoria", $("f-categoria").value);
   const url = API + (p.toString() ? "?" + p : "");
   const json = await llamar("GET", url);
   const tbody = $("tabla");
-  tbody.innerHTML = "";
+  tbody.innerHTML = "";  // borra las filas anteriores
+  // json.data es la lista de productos (o undefined si hubo error).
   (json.data || []).forEach((prod) => {
     const tr = document.createElement("tr");
     if (!prod.activo) tr.className = "inactivo";
@@ -146,22 +172,26 @@ async function listar() {
         <button class="sec" data-editar="${prod.id}">Editar</button>
         <button class="del" data-borrar="${prod.id}">Borrar</button>
       </td>`;
-    tr.children[1].textContent = prod.nombre; // evita inyección de HTML
+    // El nombre lo escribe el usuario: se asigna con textContent (texto plano)
+    // y no dentro de innerHTML, para evitar inyección de HTML/JavaScript (XSS).
+    tr.children[1].textContent = prod.nombre;
     tbody.appendChild(tr);
   });
 }
 
+// Deja el formulario vacío y en modo "crear" (POST).
 function limpiar() {
   $("form").reset();
   $("id").value = "";
   $("titulo-form").textContent = "Nuevo producto (POST)";
 }
 
+// GET /api/productos/<id> y copia los datos al formulario para editarlos (modo PUT).
 async function cargarEnFormulario(id) {
   const json = await llamar("GET", API + id);
   if (!json.ok) return;
   const p = json.data;
-  $("id").value = p.id;
+  $("id").value = p.id;  // campo oculto: si tiene valor, el formulario hará PUT
   $("nombre").value = p.nombre;
   $("descripcion").value = p.descripcion;
   $("precio").value = p.precio;
@@ -171,8 +201,10 @@ async function cargarEnFormulario(id) {
   $("titulo-form").textContent = `Editar producto #${p.id} (PUT)`;
 }
 
+// Botón "Guardar": crea (POST) o actualiza (PUT) según si hay un id cargado.
 $("form").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  e.preventDefault();  // evita que el navegador recargue la página al enviar el formulario
+  // Objeto que se enviará como JSON. Number(...) convierte el texto del input a número.
   const datos = {
     nombre: $("nombre").value,
     descripcion: $("descripcion").value,
@@ -182,27 +214,35 @@ $("form").addEventListener("submit", async (e) => {
     activo: $("activo").checked,
   };
   const id = $("id").value;
+  // Operador ternario: condición ? si_es_verdad : si_es_falso
   const json = id
-    ? await llamar("PUT", API + id, datos)
-    : await llamar("POST", API, datos);
+    ? await llamar("PUT", API + id, datos)   // PUT /api/productos/<id>
+    : await llamar("POST", API, datos);      // POST /api/productos/
+  // Si salió bien: limpia el formulario, recarga la tabla y vuelve a mostrar
+  // la respuesta del POST/PUT (listar() la habría reemplazado por la del GET).
   if (json.ok) { limpiar(); listar().then(() => mostrar(id ? "PUT" : "POST", id ? API + id : API, json.status, json)); }
 });
 
+// Botones de cada fila de la tabla (Ver, Editar, Borrar).
+// Se usa UN solo "listener" en la tabla (delegación de eventos) en vez de uno
+// por botón, porque las filas se crean y se borran cada vez que se lista.
 $("tabla").addEventListener("click", async (e) => {
-  const b = e.target.closest("button");
+  const b = e.target.closest("button");  // botón presionado (o null si se hizo clic fuera de uno)
   if (!b) return;
   if (b.dataset.ver) llamar("GET", API + b.dataset.ver);
   if (b.dataset.editar) cargarEnFormulario(b.dataset.editar);
   if (b.dataset.borrar) {
     if (!confirm(`¿Eliminar el producto #${b.dataset.borrar}?`)) return;
-    const json = await llamar("DELETE", API + b.dataset.borrar);
+    const json = await llamar("DELETE", API + b.dataset.borrar);  // DELETE /api/productos/<id>
     if (json.ok) listar().then(() => mostrar("DELETE", API + b.dataset.borrar, json.status, json));
   }
 });
 
+// Botones "Limpiar" y "Filtrar", y Enter en la caja de búsqueda.
 $("btn-cancelar").addEventListener("click", limpiar);
 $("btn-buscar").addEventListener("click", listar);
 $("buscar").addEventListener("keydown", (e) => { if (e.key === "Enter") listar(); });
+// Al abrir la página se carga la lista de productos.
 listar();
 </script>
 </body>

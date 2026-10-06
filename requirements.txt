@@ -1,5 +1,22 @@
-# Django 4.2 (LTS): es la última versión compatible con MariaDB 10.4, que es la que trae XAMPP.
-Django>=4.2,<5.0
-djangorestframework>=3.15,<3.17
-PyMySQL>=1.1
-cryptography>=42.0
+# Librerías del proyecto, con versiones EXACTAS (==) para que cualquier PC
+# instale lo mismo que se probó. Instalar con:  pip install -r requirements.txt
+# Requiere Python 3.10, 3.11 o 3.12 (ver DOCUMENTACION.md).
+
+# --- Librerías principales ---
+# Django 4.2 (LTS): la última versión compatible con MariaDB 10.4, que es la
+# que trae XAMPP. Django 5.x exige MariaDB 10.5 o superior.
+Django==4.2.30
+# Django REST Framework: convierte Django en una API REST (serializers, ViewSets, routers).
+djangorestframework==3.16.1
+# Conector MySQL escrito en Python puro (se activa en config/__init__.py).
+PyMySQL==1.2.3
+# Necesaria para que PyMySQL pueda iniciar sesión en MySQL 8
+# (método de autenticación caching_sha2_password).
+cryptography==50.0.2
+
+# --- Dependencias de las anteriores (pip las instala solas; se fijan igual) ---
+asgiref==3.12.1
+cffi==2.1.1
+pycparser==3.0
+sqlparse==0.6.0
+tzdata==2026.5

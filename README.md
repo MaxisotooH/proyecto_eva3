@@ -9,6 +9,8 @@ crear, listar, actualizar y borrar productos. Todas las respuestas (éxito y err
 proyecto_eva3/
 ├── manage.py
 ├── requirements.txt
+├── iniciar_demo.bat        # todo en uno: revisa MySQL, crea la BD, prepara datos y levanta el servidor
+├── reiniciar_datos.bat     # vuelve a dejar los 8 productos de ejemplo (entre ensayos)
 ├── config/                 # proyecto Django
 │   ├── __init__.py         # PyMySQL como conector MySQL
 │   ├── settings.py         # INSTALLED_APPS, MySQL, configuración DRF
@@ -20,15 +22,31 @@ proyecto_eva3/
 │   ├── urls.py             # Router de DRF (ViewSet)
 │   ├── exceptions.py       # todos los errores salen en JSON con el mismo formato
 │   ├── admin.py            # administración del modelo
-│   ├── tests.py            # 18 pruebas automáticas del CRUD
+│   ├── tests.py            # 19 pruebas automáticas (CRUD + comando preparar_demo)
+│   ├── management/commands/preparar_demo.py  # reinicia productos y crea el admin
 │   ├── fixtures/productos.json   # datos de ejemplo
 │   └── templates/productos/cliente.html  # cliente REST web propio
 └── docs/
     ├── crear_base_datos.sql
+    ├── producto_nuevo.json # body de ejemplo para el POST de la demo
     └── Eva3_API_Productos.postman_collection.json
 ```
 
-## Instalación (Windows, laboratorio)
+## Inicio rápido (recomendado para la presentación)
+
+1. XAMPP Control Panel → **Start** en MySQL.
+2. Doble clic en **`iniciar_demo.bat`**. El script:
+   - revisa que MySQL esté corriendo en el puerto 3306,
+   - crea la base `tienda_api` si no existe,
+   - instala las librerías y ejecuta `migrate`,
+   - ejecuta `python manage.py preparar_demo`: deja **exactamente los 8 productos de ejemplo**
+     (ids 1 a 8; el próximo producto creado será el 9) y crea el usuario admin,
+   - levanta el servidor y abre http://127.0.0.1:8000/.
+3. Admin: http://127.0.0.1:8000/admin/ → usuario **`admin`**, clave **`admin123`**.
+4. Después de cada ensayo, doble clic en **`reiniciar_datos.bat`** (el servidor puede seguir abierto)
+   para volver al estado inicial. Si no, el DELETE del producto 4 y el POST del teclado fallarán en la siguiente pasada.
+
+## Instalación manual (Windows, laboratorio)
 
 > Requisitos: Python 3.10+ y MySQL corriendo. Recomendado: **XAMPP** → en el XAMPP Control Panel presionar **Start** en MySQL.
 > El proyecto usa Django 4.2 porque es compatible con la MariaDB 10.4 que trae XAMPP.
@@ -53,8 +71,8 @@ mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS tienda_api CHARACTER SET utf8
 ```bat
 :: 5. Crear tablas, cargar datos de ejemplo y crear usuario admin
 python manage.py migrate
-python manage.py loaddata productos
-python manage.py createsuperuser
+python manage.py preparar_demo      :: 8 productos de ejemplo + usuario admin / admin123
+:: (alternativa: python manage.py loaddata productos  y  python manage.py createsuperuser)
 
 :: 6. Levantar el servidor
 python manage.py runserver
@@ -109,13 +127,17 @@ Importar `docs/Eva3_API_Productos.postman_collection.json`. Trae todas las petic
 ## Pruebas automáticas
 
 ```bat
-python manage.py test productos           :: usa MySQL (crea test_tienda_api)
+python manage.py test productos           :: usa MySQL (crea test_tienda_api), 19 pruebas
 set USE_SQLITE=1 && python manage.py test productos   :: sin MySQL
 ```
 
 ---
 
 ## Guion para la demostración (mapeado a la rúbrica)
+
+**Antes de empezar:** MySQL encendido en XAMPP → `iniciar_demo.bat` (o `reiniciar_datos.bat` si el
+servidor ya estaba abierto) → Postman con la colección importada → Workbench o phpMyAdmin
+(http://localhost/phpmyadmin) conectado a `root@127.0.0.1:3306` sin clave.
 
 **Criterio 1 — Implementa DRF (settings, MySQL, librerías)**
 1. Mostrar `requirements.txt` (Django, djangorestframework, PyMySQL).
@@ -126,7 +148,7 @@ set USE_SQLITE=1 && python manage.py test productos   :: sin MySQL
 
 **Criterio 2 — CRUD con salidas JSON (Postman)**
 1. GET lista → GET `/productos/4` → GET `/productos/9999` (404 JSON).
-2. POST producto nuevo (201) → POST con nombre repetido (400 JSON).
+2. POST producto nuevo, "Crear producto nuevo (Teclado Kumara)" (201, id 9) → POST con nombre repetido (400 JSON).
 3. PUT `/productos/` con `{"id": 4, ...}` (200) → PUT con id 9999 (404 JSON).
 4. DELETE `/productos/4` (200 JSON) → repetir el SELECT en MySQL para mostrar que cambió.
 
@@ -142,7 +164,10 @@ set USE_SQLITE=1 && python manage.py test productos   :: sin MySQL
 | Error | Solución |
 | --- | --- |
 | `Access denied for user 'root'` | Poner la clave correcta en `DATABASES['default']['PASSWORD']` |
-| `Unknown database 'tienda_api'` | Ejecutar `docs/crear_base_datos.sql` |
+| `Unknown database 'tienda_api'` | Ejecutar `iniciar_demo.bat` o `docs/crear_base_datos.sql` |
+| POST da 400 "nombre ya existe" o DELETE /4 da 404 en la demo | Quedaron datos de un ensayo: ejecutar `reiniciar_datos.bat` |
+| `Error: That port is already in use` | Ya hay un servidor abierto: cerrar la otra ventana o usar esa misma |
+| Admin rechaza `admin` / `admin123` | El usuario ya existía con otra clave: `python manage.py changepassword admin` |
 | `Can't connect to MySQL server` | Iniciar MySQL (XAMPP → Start MySQL / servicio MySQL80) o revisar el puerto |
 | `cryptography package is required` | `pip install cryptography` (ya está en requirements) |
 | `MariaDB 10.5 or later is required` | Tienes un Django más nuevo instalado: `pip install -r requirements.txt` (instala Django 4.2) |

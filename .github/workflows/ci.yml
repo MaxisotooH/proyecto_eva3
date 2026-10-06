@@ -34,7 +34,7 @@ jobs:
       - name: Revisar proyecto
         run: python manage.py check && python manage.py makemigrations --check --dry-run
       - name: Migrar y cargar datos (MySQL)
-        run: python manage.py migrate --noinput && python manage.py loaddata productos
+        run: python manage.py migrate --noinput && python manage.py preparar_demo
       - name: Pruebas automaticas (MySQL)
         run: python manage.py test productos -v 2
       - name: Prueba de humo con el servidor real

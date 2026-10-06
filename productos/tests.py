@@ -4,6 +4,11 @@ Con MySQL:          python manage.py test
 Sin MySQL (rápido): set USE_SQLITE=1 && python manage.py test     (Windows cmd)
                     $env:USE_SQLITE=1; python manage.py test      (PowerShell)
 """
+from io import StringIO
+
+from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.test import TransactionTestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -115,3 +120,17 @@ class ProductoAPITest(APITestCase):
         r = self.client.delete(URL, {"id": self.p1.id}, format="json")
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Producto.objects.filter(pk=self.p1.id).exists())
+
+
+class PrepararDemoTest(TransactionTestCase):
+    """El comando deja exactamente los 8 productos del fixture y el próximo id es el 9."""
+
+    def test_reinicia_productos_y_crea_admin(self):
+        Producto.objects.create(nombre="Sobrante", precio=1000)
+        call_command("preparar_demo", stdout=StringIO())
+        call_command("preparar_demo", stdout=StringIO())  # repetirlo no falla
+        self.assertEqual(Producto.objects.count(), 8)
+        self.assertFalse(Producto.objects.filter(nombre="Sobrante").exists())
+        self.assertTrue(get_user_model().objects.filter(username="admin", is_superuser=True).exists())
+        r = self.client.post(URL, {"nombre": "Nuevo", "precio": 1000}, format="json")
+        self.assertEqual(r.json()["data"]["id"], 9)

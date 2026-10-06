@@ -134,3 +134,19 @@ class PrepararDemoTest(TransactionTestCase):
         self.assertTrue(get_user_model().objects.filter(username="admin", is_superuser=True).exists())
         r = self.client.post(URL, {"nombre": "Nuevo", "precio": 1000}, format="json")
         self.assertEqual(r.json()["data"]["id"], 9)
+
+
+class VistaNavegableTest(APITestCase):
+    """La vista navegable de DRF (navegador) muestra formularios útiles."""
+
+    def setUp(self):
+        self.p1 = Producto.objects.create(nombre="Teclado", precio=15000)
+
+    def test_formulario_put_del_detalle_viene_relleno(self):
+        r = self.client.get(f"{URL}{self.p1.id}/", HTTP_ACCEPT="text/html")
+        self.assertContains(r, 'value="Teclado"')
+
+    def test_lista_no_muestra_formulario_put_sin_id(self):
+        r = self.client.get(URL, HTTP_ACCEPT="text/html")
+        self.assertContains(r, 'method="POST" enctype="multipart/form-data"')
+        self.assertNotContains(r, 'data-method="PUT" enctype="multipart/form-data"')

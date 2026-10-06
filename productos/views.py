@@ -4,6 +4,7 @@ from django.shortcuts import render
 from rest_framework import status, viewsets
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.utils.serializer_helpers import ReturnDict
 
 from .exceptions import respuesta_error
 from .models import Producto
@@ -15,6 +16,10 @@ def respuesta_ok(mensaje, data=None, http_status=status.HTTP_200_OK, **extra):
     cuerpo = {"ok": True, "status": http_status, "mensaje": mensaje}
     cuerpo.update(extra)
     cuerpo["data"] = data
+    serializer = getattr(data, "serializer", None)
+    if serializer is not None:
+        # Mantiene el serializer para que la vista navegable de DRF rellene el formulario
+        cuerpo = ReturnDict(cuerpo, serializer=serializer)
     return Response(cuerpo, status=http_status)
 
 

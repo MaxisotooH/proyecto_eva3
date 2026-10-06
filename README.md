@@ -21,8 +21,9 @@ proyecto_eva3/
 │   ├── views.py            # ProductoViewSet (ModelViewSet) con respuestas JSON
 │   ├── urls.py             # Router de DRF (ViewSet)
 │   ├── exceptions.py       # todos los errores salen en JSON con el mismo formato
+│   ├── renderers.py        # vista navegable de DRF (formularios en el navegador)
 │   ├── admin.py            # administración del modelo
-│   ├── tests.py            # 19 pruebas automáticas (CRUD + comando preparar_demo)
+│   ├── tests.py            # 21 pruebas automáticas (CRUD, vista navegable y preparar_demo)
 │   ├── management/commands/preparar_demo.py  # reinicia productos y crea el admin
 │   ├── fixtures/productos.json   # datos de ejemplo
 │   └── templates/productos/cliente.html  # cliente REST web propio
@@ -126,7 +127,7 @@ Importar `docs/Eva3_API_Productos.postman_collection.json`. Trae todas las petic
 ## Pruebas automáticas
 
 ```bat
-python manage.py test productos           :: usa MySQL (crea test_tienda_api), 19 pruebas
+python manage.py test productos           :: usa MySQL (crea test_tienda_api), 21 pruebas
 set USE_SQLITE=1 && python manage.py test productos   :: sin MySQL
 ```
 
@@ -157,6 +158,9 @@ servidor ya estaba abierto) → Postman con la colección importada → Workbenc
 3. `/admin/`: listar, buscar, filtrar, editar precio/stock en la lista, crear y borrar productos.
 4. Aporte extra: cliente REST web en `/`, filtros de búsqueda, errores JSON uniformes,
    barra final opcional, rutas /api/ inexistentes en JSON, pruebas automáticas.
+5. Vista navegable de DRF en el navegador (como la Figura 2 del enunciado):
+   `/api/productos/` → formulario POST; `/api/productos/4/` → formulario PUT ya relleno, PATCH y botón DELETE.
+   El PUT con el id en el JSON sobre `/api/productos/` se hace en la pestaña **Raw data**.
 
 ## Problemas comunes
 

@@ -113,7 +113,7 @@ REST_FRAMEWORK = {
     # Respuestas en JSON (y la vista navegable de DRF para probar en el navegador)
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
-        "rest_framework.renderers.BrowsableAPIRenderer",
+        "productos.renderers.VistaNavegableRenderer",
     ],
     # API abierta para la demostración con Postman / Thunder Client
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
